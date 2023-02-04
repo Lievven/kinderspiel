@@ -1,18 +1,21 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, render::render_resource::encase::rts_array::Length};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::*};
 use std::{f32::consts::TAU};
+use rand::Rng;
 
 use crate::kiddyboids::MousePosition;
 
 
-const VISUAL_RANGE: f32 = 400.;
-const PROTECTED_RANGE: f32 = 80.;
-const MOUSE_ATTRACTION: f32 = 0.01;
+const VISUAL_RANGE: f32 = 80.;
+const PROTECTED_RANGE: f32 = 25.;
+const MOUSE_ATTRACTION: f32 = 0.008;
 const TURN_FACTOR: f32 = 0.2;
-const SEPARATION_FACTOR: f32 = 0.05;
-const CENTERING_FACTOR: f32 = 0.0005;
+const SEPARATION_FACTOR: f32 = 0.2;
 const MATCHING_FACTOR: f32 = 0.05;
-const MAX_SPEED: f32 = 200.;
-const MIN_SPEED: f32 = 100.;
+const CENTERING_FACTOR: f32 = 0.0005;
+const MAX_SPEED: f32 = 400.;
+const MIN_SPEED: f32 = 150.;
+
+const BOID_COUNT: i32 = 500;
 
 
 // TODO: implement array of boids???
@@ -41,18 +44,19 @@ pub fn boids_setup (
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut boids_list: ResMut<BoidsList>,
 ) {
-
-    boids_list.push(Boid{x: 700., y: 300., velocity_x: -50., velocity_y: -20.});
-    boids_list.push(Boid{x: 700., y: 100., velocity_x: -50., velocity_y: 20.});
-    boids_list.push(Boid{x: 400., y: 300., velocity_x: 50., velocity_y: -30.});
-    boids_list.push(Boid{x: 400., y: 100., velocity_x: -50., velocity_y: 30.});
-    boids_list.push(Boid{x: 100., y: 300., velocity_x: 50., velocity_y: -40.});
-    boids_list.push(Boid{x: 100., y: 100., velocity_x: 50., velocity_y: 40.});
+    let mut rng = rand::thread_rng();
+    for i in 0..BOID_COUNT {
+        let radians = i as f32 * TAU / BOID_COUNT as f32;
+        let radius = 100.0 * rng.gen_range(0.1 .. 4.0);
+        let x = 400. + f32::sin(radians) * radius;
+        let y = 300. - f32::cos(radians) * radius;
+        boids_list.push(Boid{x, y, velocity_x: 0., velocity_y: 0.});
+    }
 
     for i in 0..boids_list.len() {
         commands.spawn((
             MaterialMesh2dBundle {
-                mesh: meshes.add(shape::RegularPolygon::new(50., 3).into()).into(),
+                mesh: meshes.add(shape::RegularPolygon::new(20., 3).into()).into(),
                 material: materials.add(ColorMaterial::from(Color::RED)),
                 ..default()
             },
@@ -69,6 +73,7 @@ pub fn boid_movement (
     mut boid_position: Query<(&mut BoidId, &mut Transform)>,
     mut boids_list: ResMut<BoidsList>,
     mouse_position: Res<MousePosition>,
+    windows: ResMut<Windows>,
 ) {
     let size = boids_list.len();
     for i in 0..size {
@@ -103,6 +108,7 @@ pub fn boid_movement (
                 cohesion_y += other.y;
             }
         }
+
         let boid = &mut boids_list[i];
         boid.velocity_x += close_x * SEPARATION_FACTOR;
         boid.velocity_y += close_y * SEPARATION_FACTOR;
@@ -132,8 +138,9 @@ pub fn boid_movement (
         boid.x += boid.velocity_x * time.delta_seconds();
         boid.y += boid.velocity_y * time.delta_seconds();
      
-        transform.translation.x = boid.x - 400.;
-        transform.translation.y = boid.y - 300.;
+        let window = windows.get_primary().unwrap();
+        transform.translation.x = boid.x - window.width() / 2.0;
+        transform.translation.y = boid.y - window.height() / 2.0;
         
     }
 }
