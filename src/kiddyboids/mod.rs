@@ -22,6 +22,7 @@ pub fn run(mut app: App) {
     app
     .insert_resource(MousePosition { x: 0., y: 0. })
     .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+    .insert_resource(BoidsList(Vec::new()))
     .add_plugins(DefaultPlugins.set(WindowPlugin {
         window: WindowDescriptor {
             title: format!("Kinderspiel"),
@@ -32,6 +33,7 @@ pub fn run(mut app: App) {
         ..default()
     }))
     .add_startup_system(setup)
+    .add_startup_system(boids_setup)
     .add_system(sprite_movement)
     .add_system(mouse_click_system)
     .add_system(boid_movement)
@@ -93,22 +95,4 @@ pub fn setup(
         transform: Transform::from_translation(Vec3::new(100., 0., 0.)),
         ..default()
     });
-
-    commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(shape::RegularPolygon::new(50., 3).into()).into(),
-            material: materials.add(ColorMaterial::from(Color::TEAL)),
-            ..default()
-        },
-        Boid{x: 0., y: 0., velocity_x: 0., velocity_y: 0.},
-    ));
-
-    commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(shape::RegularPolygon::new(25., 8).into()).into(),
-            material: materials.add(ColorMaterial::from(Color::TEAL)),
-            ..default()
-        },
-        Boid{x: 0., y: 0., velocity_x: 0., velocity_y: 0.},
-    ));
 }
