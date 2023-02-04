@@ -1,7 +1,8 @@
-use bevy::{input::mouse::MouseMotion, prelude::*, sprite::MaterialMesh2dBundle};
-use std::f32::consts::TAU;
+use bevy::{prelude::*};
 
-const TURN_RATE: f32 = 0.2;
+mod kiddyboids;
+
+/* const TURN_RATE: f32 = 0.2;
 const VISUAL_RANGE: f32 = 400.;
 const PROTECTED_RANGE: f32 = 8.;
 const MOUSE_ATTRACTION: f32 = 0.03;
@@ -9,10 +10,11 @@ const SEPARATION_FACTOR: f32 = 0.05;
 const CENTERING_FACTOR: f32 = 0.0005;
 const MATCHING_FACTOR: f32 = 0.05;
 const MAX_SPEED: f32 = 6.;
-const MIN_SPEED: f32 = 3.;
+const MIN_SPEED: f32 = 3.;*/
 
 fn main() {
-    App::new()
+    kiddyboids::run(App::new());
+/*    App::new()
         .insert_resource(MousePosition { x: 0., y: 0. })
         .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -29,8 +31,11 @@ fn main() {
         .add_system(mouse_click_system)
         .add_system(boid_movement)
         .run();
+        */
 }
 
+
+/*
 #[derive(Resource)]
 struct MousePosition {
     x: f32,
@@ -182,3 +187,4 @@ fn setup(
         Boid{x: 0., y: 0., velocity_x: 0., velocity_y: 0.},
     ));
 }
+*/
