@@ -72,7 +72,7 @@ pub fn setup_walls(
         window.width()
     );
 
-
+    /*
     let startpoint = Vec2::new(100., 100.);
     let endpoint = Vec2::new(-100., -100.);
 
@@ -94,7 +94,7 @@ pub fn setup_walls(
         endpoint,
         window.height(),
         window.width(),
-    );
+    );*/
 }
 
 
@@ -146,7 +146,7 @@ fn create_vertical_wall(
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes
-                .add(shape::Quad::new(Vec2::new(10., startpoint.y - endpoint.y)).into())
+                .add(shape::Quad::new(Vec2::new(10., startpoint.y - endpoint.y).abs()).into())
                 .into(),
             material: materials.add(ColorMaterial::from(Color::GREEN)),
             transform: Transform::from_translation(Vec3::new(
@@ -218,7 +218,7 @@ fn generate_walls (
 
     for i in 0..horizontal_walls.len() {
         for j in 0..horizontal_walls[i].len() {
-            if /*horizontal_walls[i][j]*/ true {
+            if horizontal_walls[i][j] {
                 let x1 = (i+1) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
                 let x2 = (i+2) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
                 let y = (j+1) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
@@ -239,7 +239,7 @@ fn generate_walls (
 
     for i in 0..vertical_walls.len() {
         for j in 0..vertical_walls[i].len() {
-            if /*vertical_walls[i][j]*/ true {
+            if vertical_walls[i][j] {
                 let x = (i+1) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
                 let y1 = (j+1) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
                 let y2 = (j+2) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
