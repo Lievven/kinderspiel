@@ -4,7 +4,7 @@ use std::f32::consts::TAU;
 mod collision;
 mod goalcollision;
 
-use super::{goal_setup::Goal, walls::HorizontalWall};
+use super::{goal_setup::Goal, walls::{HorizontalWall, VerticalWall}};
 use crate::kiddyboids::MousePosition;
 
 pub const VISUAL_RANGE: f32 = 80.;
@@ -147,6 +147,7 @@ pub fn boid_movement(
     mouse_position: Res<MousePosition>,
     windows: ResMut<Windows>,
     horizontal_walls: Query<&HorizontalWall>,
+    vertical_walls: Query<&VerticalWall>,
     goals: Query<&Goal>,
 ) {
     let goal = goals.iter().next();
@@ -199,7 +200,8 @@ pub fn boid_movement(
             boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
             boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
 
-            collision::collisioncheck(boid, &horizontal_walls);
+            collision::horizontal_collision_check(boid, &horizontal_walls);
+            collision::vertical_collision_check(boid, &vertical_walls);
             goalcollision::goal_collisioncheck(boid, &goals);
 
             let window = windows.get_primary().unwrap();
