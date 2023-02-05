@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, math::Vec3Swizzles};
 use rand::Rng;
 use std::f32::consts::TAU;
 mod collision;
@@ -130,7 +130,6 @@ pub fn animate_sprite(
     )>,
 ) {
     for (mut timer, is_active, mut sprite, texture_atlas_handle) in &mut query {
-        info!("Is it active in Sprite? {:?}", is_active.0);
         if is_active.0 {
             timer.tick(time.delta());
             if timer.just_finished() {
@@ -138,7 +137,6 @@ pub fn animate_sprite(
                 sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
             }
         }
-        else {}
     }
 }
 
@@ -151,6 +149,8 @@ pub fn boid_movement(
     horizontal_walls: Query<&HorizontalWall>,
     goals: Query<&Goal>,
 ) {
+    let goal = goals.iter().next();
+
     let size = boids_list.len();
     for i in 0..size {
         let mut neighbours = 0.0;
@@ -167,23 +167,24 @@ pub fn boid_movement(
             this_boid_is_active = boid.is_active;
             if boid.is_active {
                 let other = &boids_list[j];
-
-                let mut dist_x = boid.x - other.x;
-                dist_x *= dist_x;
-                let mut dist_y = boid.y - other.y;
-                dist_y *= dist_y;
-                let distance = dist_x + dist_y;
-                // using squared distance cuz roots suck
-                if distance < PROTECTED_RANGE * PROTECTED_RANGE {
-                    close_x += boid.x - other.x;
-                    close_y += boid.y - other.y;
-                }
-                if distance < VISUAL_RANGE {
-                    neighbours += 1.;
-                    align_x += other.velocity_x;
-                    align_y += other.velocity_y;
-                    cohesion_x += other.x;
-                    cohesion_y += other.y;
+                if other.is_active {
+                    let mut dist_x = boid.x - other.x;
+                    dist_x *= dist_x;
+                    let mut dist_y = boid.y - other.y;
+                    dist_y *= dist_y;
+                    let distance = dist_x + dist_y;
+                    // using squared distance cuz roots suck
+                    if distance < PROTECTED_RANGE * PROTECTED_RANGE {
+                        close_x += boid.x - other.x;
+                        close_y += boid.y - other.y;
+                    }
+                    if distance < VISUAL_RANGE {
+                        neighbours += 1.;
+                        align_x += other.velocity_x;
+                        align_y += other.velocity_y;
+                        cohesion_x += other.x;
+                        cohesion_y += other.y;
+                    }
                 }
             }
         }
@@ -239,6 +240,9 @@ pub fn boid_movement(
             let window = windows.get_primary().unwrap();
             transform.translation.x = boid.x - window.width() / 2.0;
             transform.translation.y = boid.y - window.height() / 2.0;
+        }
+        else{
+            transform.translation.z = -10.;
         }
     }
 }
