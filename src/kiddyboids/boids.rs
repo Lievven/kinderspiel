@@ -158,6 +158,12 @@ pub fn boid_movement(
     goals: Query<&Goal>,
 ) {
     let goal = goals.iter().next();
+    let goalposition: Vec2;
+    let goalradius: f32;
+    if let Some(goal) = goal {
+        goalposition = goal.position;
+        goalradius = goal.radius;
+    }
 
     let size = boids_list.len();
     for i in 0..size {
@@ -172,6 +178,9 @@ pub fn boid_movement(
 
         for j in 0..size {
             let boid = &boids_list[i];
+
+
+
             this_boid_is_active = boid.is_active;
             if boid.is_active {
                 let other = &boids_list[j];

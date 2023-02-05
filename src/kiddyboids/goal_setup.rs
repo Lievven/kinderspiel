@@ -17,7 +17,7 @@ pub fn setup_goal(
 
 
     let radius = 50.;
-    let position = Vec2::new(50., 50.);
+    let position = Vec2::new(500., 325.);
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes.add(shape::Circle::new(radius).into()).into(),
