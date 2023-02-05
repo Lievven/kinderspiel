@@ -1,5 +1,4 @@
-use bevy::{input::mouse::MouseMotion, prelude::*, sprite::MaterialMesh2dBundle};
-use std::f32::consts::TAU;
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 mod boids;
 use boids::*;
@@ -9,6 +8,9 @@ use sprites::*;
 
 mod walls;
 use walls::*;
+
+mod goal;
+use goal::*;
 
 #[derive(Resource)]
 pub struct MousePosition {
@@ -35,6 +37,7 @@ pub fn run(mut app: App) {
             ..default()
         }))
         .add_startup_system(setup_walls)
+        .add_startup_system(setup_goal)
         .add_startup_system(setup)
         .add_startup_system(boids_sprite_setup)
         .add_system(animate_sprite)

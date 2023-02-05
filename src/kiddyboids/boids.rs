@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::{TAU};
 mod collision;
 
 use super::walls::HorizontalWall;
