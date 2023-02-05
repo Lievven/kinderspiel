@@ -1,19 +1,43 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, render::render_resource::encase::rts_array::Length};
-use std::{f32::consts::TAU};
+use bevy::{prelude::*};
+use std::{f32::consts::{TAU, PI}};
+use rand::Rng;
 
 use crate::kiddyboids::MousePosition;
 
 
-const VISUAL_RANGE: f32 = 400.;
-const PROTECTED_RANGE: f32 = 80.;
-const MOUSE_ATTRACTION: f32 = 0.01;
-const TURN_FACTOR: f32 = 0.2;
-const SEPARATION_FACTOR: f32 = 0.05;
-const CENTERING_FACTOR: f32 = 0.0005;
-const MATCHING_FACTOR: f32 = 0.05;
-const MAX_SPEED: f32 = 200.;
-const MIN_SPEED: f32 = 100.;
+const VISUAL_RANGE: f32 = 80.;
+const PROTECTED_RANGE: f32 = 40.;
+const MOUSE_ATTRACTION: f32 = 0.08;
+const TURN_FACTOR: f32 = 30.0;
+const SEPARATION_FACTOR: f32 = 0.8;
+const MATCHING_FACTOR: f32 = 0.5;
+const CENTERING_FACTOR: f32 = 0.005;
+const MAX_SPEED: f32 = 400.;
+const MIN_SPEED: f32 = 150.;
+const MARGINS: f32 = 60.;
 
+const BOID_COUNT: i32 = 50;
+const RARE_CHANCE: f32 = 80.0;
+
+const ATLAS_RARE: &'static [&'static str] = &[
+    "boid_atlas_germany.png",
+    "boid_atlas_ukraine.png",
+    "boid_atlas_rainbow.png",
+    "boid_atlas_kiel.png"
+];
+
+const ATLAS_COMMON: &'static [&'static str] = &[
+    "boid_atlas_tricolore.png",
+    "boid_atlas_flower.png",
+    "boid_atlas_plain.png",
+    "boid_atlas_star.png"
+];
+
+const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
+const SPRITE_SCALE: f32 = 1.0 / 6.0;
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
 
 // TODO: implement array of boids???
 #[derive(Resource, Deref, DerefMut)]
@@ -30,34 +54,80 @@ pub struct Boid {
 #[derive(Component, Deref)]
 pub struct BoidId (usize);
 
-#[derive(Component)]
-enum Movement {
-    Mouse,
-}
 
-pub fn boids_setup (
+pub fn boids_sprite_setup (
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut boids_list: ResMut<BoidsList>,
 ) {
+    let mut rare_handles = Vec::with_capacity(ATLAS_RARE.len());
+    let mut common_handles = Vec::with_capacity(ATLAS_COMMON.len());
 
-    boids_list.push(Boid{x: 700., y: 300., velocity_x: -50., velocity_y: -20.});
-    boids_list.push(Boid{x: 700., y: 100., velocity_x: -50., velocity_y: 20.});
-    boids_list.push(Boid{x: 400., y: 300., velocity_x: 50., velocity_y: -30.});
-    boids_list.push(Boid{x: 400., y: 100., velocity_x: -50., velocity_y: 30.});
-    boids_list.push(Boid{x: 100., y: 300., velocity_x: 50., velocity_y: -40.});
-    boids_list.push(Boid{x: 100., y: 100., velocity_x: 50., velocity_y: 40.});
+    for i in 0..ATLAS_RARE.len() {
+        let texture_handler: Handle<Image> = asset_server.load(ATLAS_RARE[i]);
+        let texture_atlas = TextureAtlas::from_grid(
+            texture_handler, SPRITE_SIZE, 2, 2, None, None
+        );
+        rare_handles.push(texture_atlases.add(texture_atlas));
+    }
 
+    for i in 0..ATLAS_COMMON.len() {
+        let texture_handler: Handle<Image> = asset_server.load(ATLAS_COMMON[i]);
+        let texture_atlas = TextureAtlas::from_grid(
+            texture_handler, SPRITE_SIZE, 2, 2, None, None
+        );
+        common_handles.push(texture_atlases.add(texture_atlas));
+
+    }
+    
+    let mut rng = rand::thread_rng();
+    for i in 0..BOID_COUNT {
+        let radians = i as f32 * TAU / BOID_COUNT as f32;
+        let radius = 100.0 * rng.gen_range(0.1 .. 4.0);
+        let x = 400. + f32::sin(radians) * radius;
+        let y = 300. - f32::cos(radians) * radius;
+        boids_list.push(Boid{x, y, velocity_x: 0., velocity_y: 0.});
+    }
+    
     for i in 0..boids_list.len() {
+        let rare_flip: f32 = rng.gen_range(0.0 .. 100.0);
+        let texture: Handle<TextureAtlas>;
+        if rare_flip < RARE_CHANCE {
+            let sprite_choice: usize = rng.gen_range(0..rare_handles.len());
+            texture = rare_handles[sprite_choice].clone();
+        } else {
+            let sprite_choice: usize = rng.gen_range(0..common_handles.len());
+            texture = common_handles[sprite_choice].clone();
+        }
+
         commands.spawn((
-            MaterialMesh2dBundle {
-                mesh: meshes.add(shape::RegularPolygon::new(50., 3).into()).into(),
-                material: materials.add(ColorMaterial::from(Color::RED)),
+            SpriteSheetBundle {
+                texture_atlas:texture,
+                transform: Transform::from_scale(Vec3::splat(SPRITE_SCALE)),
                 ..default()
             },
             BoidId(i),
+            AnimationTimer(Timer::from_seconds(0.2, TimerMode::Repeating))
         ));
+    }
+}
+
+pub fn animate_sprite (
+    time: Res<Time>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut query: Query<(
+        &mut AnimationTimer,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+    )>,
+) {
+    for (mut timer, mut sprite, texture_atlas_handle) in &mut query {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
+        }
     }
 }
 
@@ -69,6 +139,7 @@ pub fn boid_movement (
     mut boid_position: Query<(&mut BoidId, &mut Transform)>,
     mut boids_list: ResMut<BoidsList>,
     mouse_position: Res<MousePosition>,
+    windows: ResMut<Windows>,
 ) {
     let size = boids_list.len();
     for i in 0..size {
@@ -103,6 +174,7 @@ pub fn boid_movement (
                 cohesion_y += other.y;
             }
         }
+
         let boid = &mut boids_list[i];
         boid.velocity_x += close_x * SEPARATION_FACTOR;
         boid.velocity_y += close_y * SEPARATION_FACTOR;
@@ -112,6 +184,18 @@ pub fn boid_movement (
         boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
         boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
         boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
+        
+        let window = windows.get_primary().unwrap();
+        if boid.x > window.width() - MARGINS {
+            boid.velocity_x -= TURN_FACTOR;
+        } else if boid.x < MARGINS {
+            boid.velocity_x += TURN_FACTOR;
+        }
+        if boid.y > window.height() - MARGINS {
+            boid.velocity_y -= TURN_FACTOR;
+        } else if boid.y < MARGINS {
+            boid.velocity_y += TURN_FACTOR;
+        }
 
         let mut speed = boid.velocity_x * boid.velocity_x + boid.velocity_y * boid.velocity_y;
         speed = f32::sqrt(speed);
@@ -128,11 +212,16 @@ pub fn boid_movement (
     // apply boid positions to sprites
     for (boid_id, mut transform) in &mut boid_position {
         let mut boid = &mut boids_list[boid_id.0];
+
         boid.x += boid.velocity_x * time.delta_seconds();
         boid.y += boid.velocity_y * time.delta_seconds();
+
+        let pointing: f32 = f32::atan2(-boid.velocity_x, boid.velocity_y);
+        transform.rotation = Quat::from_rotation_z(pointing);
      
-        transform.translation.x = boid.x - 400.;
-        transform.translation.y = boid.y - 300.;
+        let window = windows.get_primary().unwrap();
+        transform.translation.x = boid.x - window.width() / 2.0;
+        transform.translation.y = boid.y - window.height() / 2.0;
         
     }
 }
@@ -152,7 +241,34 @@ pub fn boid_movement (
 
 
 
+/*
 
+pub fn boids_setup (
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut boids_list: ResMut<BoidsList>,
+) {
+    let mut rng = rand::thread_rng();
+    for i in 0..BOID_COUNT {
+        let radians = i as f32 * TAU / BOID_COUNT as f32;
+        let radius = 100.0 * rng.gen_range(0.1 .. 4.0);
+        let x = 400. + f32::sin(radians) * radius;
+        let y = 300. - f32::cos(radians) * radius;
+        boids_list.push(Boid{x, y, velocity_x: 0., velocity_y: 0.});
+    }
+
+    for i in 0..boids_list.len() {
+        commands.spawn((
+            MaterialMesh2dBundle {
+                mesh: meshes.add(shape::RegularPolygon::new(20., 3).into()).into(),
+                material: materials.add(ColorMaterial::from(Color::RED)),
+                ..default()
+            },
+            BoidId(i),
+        ));
+    }
+}
 
 
 
@@ -174,3 +290,4 @@ fn compute_boid_behavior (
     }
 }
 
+*/
