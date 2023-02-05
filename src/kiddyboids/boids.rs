@@ -11,6 +11,7 @@ pub const VISUAL_RANGE: f32 = 80.;
 pub const PROTECTED_RANGE: f32 = 40.;
 pub const MOUSE_ATTRACTION: f32 = 0.08;
 pub const TURN_FACTOR: f32 = 80.0;
+pub const GOAL_ATTRACTION: f32 = 0.9;
 pub const SEPARATION_FACTOR: f32 = 0.8;
 pub const MATCHING_FACTOR: f32 = 0.5;
 pub const CENTERING_FACTOR: f32 = 0.005;
@@ -157,13 +158,6 @@ pub fn boid_movement(
     vertical_walls: Query<&VerticalWall>,
     goals: Query<&Goal>,
 ) {
-    let goal = goals.iter().next();
-    let goalposition: Vec2;
-    let goalradius: f32;
-    if let Some(goal) = goal {
-        goalposition = goal.position;
-        goalradius = goal.radius;
-    }
 
     let size = boids_list.len();
     for i in 0..size {
@@ -215,6 +209,13 @@ pub fn boid_movement(
             boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
             boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
             boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
+    let goal = goals.iter().next();
+    if let Some(goal) = goal {
+        if goal.position.distance(Vec2::new(boid.x, boid.y)) < (goal.radius * 2.){
+        boid.velocity_x += (goal.position.x - boid.x) * GOAL_ATTRACTION;
+        boid.velocity_y += (goal.position.y - boid.y) * GOAL_ATTRACTION;
+        }
+    }
 
             let window = windows.get_primary().unwrap();
 
