@@ -1,8 +1,10 @@
+
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 #[derive(Component)]
 pub struct Goal {
-    pub location: Vec2,
+    pub position: Vec2,
+    pub radius: f32
 }
 
 pub fn setup_goal(
@@ -13,15 +15,19 @@ pub fn setup_goal(
 ) {
     let window = windows.get_primary().unwrap();
 
+
+    let radius = 50.;
+    let position = Vec2::new(50., 50.);
     commands.spawn((
         MaterialMesh2dBundle {
-            mesh: meshes.add(shape::Circle::new(5.).into()).into(),
+            mesh: meshes.add(shape::Circle::new(radius).into()).into(),
             material: materials.add(ColorMaterial::from(Color::WHITE)),
-            transform: Transform::from_translation(Vec3::new(50., 50., 10.)),
+            transform: Transform::from_translation(Vec3::new(position.x, position.y, 10.)),
             ..default()
         },
         Goal {
-            location: Vec2::new(50., 50.),
+            position: Vec2::new(position.x + window.width() / 2., position.y + window.height() / 2.),
+            radius: radius
         },
     ));
 }
