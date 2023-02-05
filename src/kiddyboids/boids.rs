@@ -6,17 +6,18 @@ use crate::kiddyboids::MousePosition;
 
 
 const VISUAL_RANGE: f32 = 80.;
-const PROTECTED_RANGE: f32 = 25.;
-const MOUSE_ATTRACTION: f32 = 0.008;
-const TURN_FACTOR: f32 = 0.2;
-const SEPARATION_FACTOR: f32 = 0.2;
-const MATCHING_FACTOR: f32 = 0.05;
-const CENTERING_FACTOR: f32 = 0.0005;
+const PROTECTED_RANGE: f32 = 40.;
+const MOUSE_ATTRACTION: f32 = 0.08;
+const TURN_FACTOR: f32 = 30.0;
+const SEPARATION_FACTOR: f32 = 0.8;
+const MATCHING_FACTOR: f32 = 0.5;
+const CENTERING_FACTOR: f32 = 0.005;
 const MAX_SPEED: f32 = 400.;
 const MIN_SPEED: f32 = 150.;
+const MARGINS: f32 = 60.;
 
 const BOID_COUNT: i32 = 50;
-const RARE_CHANCE: f32 = 10.0;
+const RARE_CHANCE: f32 = 80.0;
 
 const ATLAS_RARE: &'static [&'static str] = &[
     "boid_atlas_germany.png",
@@ -33,7 +34,7 @@ const ATLAS_COMMON: &'static [&'static str] = &[
 ];
 
 const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
-const SPRITE_SCALE: f32 = 1.0 / 8.0;
+const SPRITE_SCALE: f32 = 1.0 / 6.0;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
@@ -77,6 +78,7 @@ pub fn boids_sprite_setup (
             texture_handler, SPRITE_SIZE, 2, 2, None, None
         );
         common_handles.push(texture_atlases.add(texture_atlas));
+
     }
     
     let mut rng = rand::thread_rng();
@@ -182,6 +184,18 @@ pub fn boid_movement (
         boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
         boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
         boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
+        
+        let window = windows.get_primary().unwrap();
+        if boid.x > window.width() - MARGINS {
+            boid.velocity_x -= TURN_FACTOR;
+        } else if boid.x < MARGINS {
+            boid.velocity_x += TURN_FACTOR;
+        }
+        if boid.y > window.height() - MARGINS {
+            boid.velocity_y -= TURN_FACTOR;
+        } else if boid.y < MARGINS {
+            boid.velocity_y += TURN_FACTOR;
+        }
 
         let mut speed = boid.velocity_x * boid.velocity_x + boid.velocity_y * boid.velocity_y;
         speed = f32::sqrt(speed);

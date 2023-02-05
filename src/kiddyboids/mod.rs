@@ -7,6 +7,9 @@ use boids::*;
 mod sprites;
 use sprites::*;
 
+mod walls;
+use walls::*;
+
 #[derive(Resource)]
 pub struct MousePosition {
     x: f32,
@@ -32,6 +35,7 @@ pub fn run(mut app: App) {
         },
         ..default()
     }))
+    .add_startup_system(setup_walls)
     .add_startup_system(setup)
 //    .add_startup_system(boids_setup)
     .add_startup_system(boids_sprite_setup)
