@@ -12,6 +12,9 @@ use walls::*;
 mod goal_setup;
 use goal_setup::*;
 
+const WIDTH: f32 = 1200.0;
+const HEIGHT: f32 = 800.0;
+
 #[derive(Resource)]
 pub struct MousePosition {
     x: f32,
@@ -30,13 +33,13 @@ pub fn run(mut app: App) {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: format!("Kinderspiel"),
-                width: 800.0,
-                height: 600.0,
+                width: WIDTH,
+                height: HEIGHT,
                 ..default()
             },
             ..default()
         }))
-        // .add_startup_system(setup_walls)
+        .add_startup_system(setup_walls)
         .add_startup_system(setup_goal)
         .add_startup_system(setup)
         .add_startup_system(boids_sprite_setup)

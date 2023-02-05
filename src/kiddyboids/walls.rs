@@ -68,12 +68,12 @@ pub fn setup_walls(
         &mut meshes,
         &mut materials,
         window.height(),
-        window.width()
+        window.width(),
     );
 
-    /*
-    let startpoint = Vec2::new(100., 100.);
-    let endpoint = Vec2::new(-100., -100.);
+    /* 
+    let startpoint = Vec2::new(-500., -100.);
+    let endpoint = Vec2::new(0., -100.);
 
     create_horizontal_wall(
         &mut commands,
@@ -81,8 +81,6 @@ pub fn setup_walls(
         &mut materials,
         startpoint,
         endpoint,
-        window.height(),
-        window.width(),
     ); 
 
     create_vertical_wall(
@@ -91,8 +89,6 @@ pub fn setup_walls(
         &mut materials,
         startpoint,
         endpoint,
-        window.height(),
-        window.width(),
     );*/
 }
 
@@ -104,28 +100,26 @@ fn create_horizontal_wall(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     startpoint: Vec2,
     endpoint: Vec2,
-    window_height: f32,
-    window_width: f32,
 ) {
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes
-                .add(shape::Quad::new(Vec2::new((startpoint.x - endpoint.x).abs(), 10.)).into())
+                .add(shape::Quad::new(
+                Vec2::new((startpoint.x - endpoint.x).abs(), 10.))
+                .into())
                 .into(),
             material: materials.add(ColorMaterial::from(Color::GREEN)),
             transform: Transform::from_translation(Vec3::new(
-                f32::min(startpoint.x, endpoint.x) + (startpoint.x - endpoint.x) / 2.,
-                f32::min(startpoint.y, endpoint.y) + (startpoint.y - endpoint.y) / 2.,
-                1.,
-            )),
+                    f32::min(startpoint.x, endpoint.x) + (startpoint.x - endpoint.x).abs() / 2.0,
+                    f32::min(startpoint.y, endpoint.y) + (startpoint.y - endpoint.y).abs() / 2.0,
+                    1.0,
+                )),
             ..default()
         },
         HorizontalWall {
             startpoint: Vec2::new(
-                f32::min(startpoint.x, endpoint.x) + window_width / 2.,
+                f32::min(startpoint.x, endpoint.x),
                 f32::min(startpoint.y, endpoint.y)
-                    + (startpoint.y - endpoint.y) / 2.
-                    + window_height / 2.,
             ),
             size: (startpoint.x - endpoint.x).abs(),
         },
@@ -138,29 +132,26 @@ fn create_vertical_wall(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     startpoint: Vec2,
     endpoint: Vec2,
-    window_height: f32,
-    window_width: f32,
 ) {
-    info!{"S:{:?} ; E:{:?}", startpoint, endpoint};
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes
-                .add(shape::Quad::new(Vec2::new(10., startpoint.y - endpoint.y).abs()).into())
+                .add(shape::Quad::new(
+                Vec2::new(10., (startpoint.y - endpoint.y).abs()))
+                .into())
                 .into(),
             material: materials.add(ColorMaterial::from(Color::GREEN)),
             transform: Transform::from_translation(Vec3::new(
-                f32::min(startpoint.x, endpoint.x) + (startpoint.x - endpoint.x) / 2.,
-                f32::min(startpoint.y, endpoint.y) + (startpoint.y - endpoint.y) / 2.,
+                f32::min(startpoint.x, endpoint.x) + (startpoint.x - endpoint.x).abs() / 2.,
+                f32::min(startpoint.y, endpoint.y) + (startpoint.y - endpoint.y).abs() / 2.,
                 1.,
             )),
             ..default()
         },
         VerticalWall {
             startpoint: Vec2::new(
-                f32::min(startpoint.x, endpoint.x)
-                    + (startpoint.y - endpoint.y) / 2. + window_width / 2.,
+                f32::min(startpoint.x, endpoint.x),
                 f32::min(startpoint.y, endpoint.y)
-                    + window_height / 2.,
             ),
             size: (startpoint.y - endpoint.y).abs(),
         },
@@ -229,8 +220,6 @@ fn generate_walls (
                     materials,
                     startpoint,
                     endpoint,
-                    window_height,
-                    window_width
                 );
             }
         }
@@ -250,8 +239,6 @@ fn generate_walls (
                     materials,
                     startpoint,
                     endpoint,
-                    window_height,
-                    window_width
                 );
             }
         }

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, math::Vec3Swizzles};
+use bevy::{prelude::*};
 use rand::Rng;
 use std::f32::consts::TAU;
 mod collision;
@@ -10,15 +10,15 @@ use crate::kiddyboids::MousePosition;
 pub const VISUAL_RANGE: f32 = 80.;
 pub const PROTECTED_RANGE: f32 = 40.;
 pub const MOUSE_ATTRACTION: f32 = 0.08;
-pub const TURN_FACTOR: f32 = 300.0;
+pub const TURN_FACTOR: f32 = 3000.0;
 pub const SEPARATION_FACTOR: f32 = 0.8;
 pub const MATCHING_FACTOR: f32 = 0.5;
 pub const CENTERING_FACTOR: f32 = 0.005;
 pub const MAX_SPEED: f32 = 400.;
 pub const MIN_SPEED: f32 = 150.;
-pub const MARGINS: f32 = 60.;
+pub const MARGINS: f32 = 20.;
 
-pub const BOID_COUNT: i32 = 50;
+pub const BOID_COUNT: i32 = 10;
 pub const RARE_CHANCE: f32 = 80.0;
 
 pub const ATLAS_RARE: &'static [&'static str] = &[
@@ -200,11 +200,12 @@ pub fn boid_movement(
             boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
             boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
 
-            collision::horizontal_collision_check(boid, &horizontal_walls);
-            collision::vertical_collision_check(boid, &vertical_walls);
+            let window = windows.get_primary().unwrap();
+
+            collision::horizontal_collision_check(boid, &horizontal_walls, window.height(), window.width());
+            collision::vertical_collision_check(boid, &vertical_walls, window.height(), window.width());
             goalcollision::goal_collisioncheck(boid, &goals);
 
-            let window = windows.get_primary().unwrap();
             if boid.x > window.width() - MARGINS {
                 boid.velocity_x -= TURN_FACTOR;
             } else if boid.x < MARGINS {
