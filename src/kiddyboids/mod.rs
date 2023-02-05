@@ -67,7 +67,7 @@ pub fn setup(
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    commands.spawn((
+   /* commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
             transform: Transform::default().with_scale(Vec3::splat(128.)),
@@ -75,5 +75,5 @@ pub fn setup(
             ..default()
         },
         Direction::Mouse,
-    ));
+    )); */
 }

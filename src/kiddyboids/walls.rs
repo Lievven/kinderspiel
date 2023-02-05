@@ -24,7 +24,7 @@ pub fn setup_walls(
     windows: ResMut<Windows>,
 ) {
     let window = windows.get_primary().unwrap();
-    for i in 0..=MAZE_WIDTH {
+    /*for i in 0..=MAZE_WIDTH {
         let x = window.width() / MAZE_WIDTH as f32 * i as f32 - (window.width() / 2.);
         for j in 0..=MAZE_HEIGHT {
             let y = window.height() / MAZE_HEIGHT as f32 * j as f32 - window.height() / 2.;
@@ -42,7 +42,7 @@ pub fn setup_walls(
         material: materials.add(ColorMaterial::from(Color::RED)),
         transform: Transform::from_translation(Vec3::new(0., 0., 10.)),
         ..default()
-    });    
+    }); */   
 
     // for x in 0..30 {
     //     let x = 50. * x as f32;
@@ -182,22 +182,22 @@ fn generate_walls (
         let offset = rng.gen_range(0..4);
         for i in 0..4 {
             let i = (i + offset) % 4;
-            if i==0 && active_x > 0 && !visited[active_x as usize - 1][active_y as usize] {
+            if i==0 && active_x > 0 && !visited[active_x - 1][active_y] {
                 stack.push((active_x, active_y));
                 stack.push((active_x -1, active_y));
                 visited[active_x-1][active_y] = true;
                 vertical_walls[active_x-1][active_y] = false;
-            } else if i==1 && active_y > 0 && !visited[active_x as usize][active_y as usize -1] {
+            } else if i==1 && active_y > 0 && !visited[active_x][active_y - 1] {
                 stack.push((active_x, active_y));
                 stack.push((active_x, active_y - 1));
                 visited[active_x][active_y - 1] = true;
                 horizontal_walls[active_x][active_y-1] = false;
-            } else if i==2 &&  active_x < MAZE_WIDTH - 1 && !visited[active_x as usize +1][active_y as usize] {
+            } else if i==2 &&  active_x < MAZE_WIDTH - 1 && !visited[active_x + 1][active_y] {
                 stack.push((active_x, active_y));
                 stack.push((active_x + 1, active_y));
                 visited[active_x + 1][active_y] = true;
                 vertical_walls[active_x][active_y] = false;
-            } else if i==3 && active_y < MAZE_HEIGHT - 1 && !visited[active_x as usize][active_y as usize +1] {
+            } else if i==3 && active_y < MAZE_HEIGHT - 1 && !visited[active_x][active_y + 1] {
                 stack.push((active_x, active_y));
                 stack.push((active_x, active_y + 1));
                 visited[active_x][active_y + 1] = true;
@@ -209,8 +209,8 @@ fn generate_walls (
     for i in 0..horizontal_walls.len() {
         for j in 0..horizontal_walls[i].len() {
             if horizontal_walls[i][j] {
-                let x1 = (i+1) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
-                let x2 = (i+2) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
+                let x1 = (i) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
+                let x2 = (i+1) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
                 let y = (j+1) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
                 let startpoint = Vec2{x: x1, y};
                 let endpoint = Vec2{x: x2, y};
@@ -229,8 +229,8 @@ fn generate_walls (
         for j in 0..vertical_walls[i].len() {
             if vertical_walls[i][j] {
                 let x = (i+1) as f32 * window_width / MAZE_WIDTH as f32 - window_width / 2.0;
-                let y1 = (j+1) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
-                let y2 = (j+2) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
+                let y1 = (j) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
+                let y2 = (j+1) as f32 * window_height / MAZE_HEIGHT as f32 - window_height / 2.0;
                 let startpoint = Vec2{x, y: y1};
                 let endpoint = Vec2{x, y: y2};
                 create_vertical_wall(
