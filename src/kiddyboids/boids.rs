@@ -1,40 +1,41 @@
 use bevy::prelude::*;
 use rand::Rng;
 use std::f32::consts::{PI, TAU};
+mod collision;
 
 use super::walls::HorizontalWall;
 use crate::kiddyboids::MousePosition;
 
-const VISUAL_RANGE: f32 = 80.;
-const PROTECTED_RANGE: f32 = 40.;
-const MOUSE_ATTRACTION: f32 = 0.08;
-const TURN_FACTOR: f32 = 300.0;
-const SEPARATION_FACTOR: f32 = 0.8;
-const MATCHING_FACTOR: f32 = 0.5;
-const CENTERING_FACTOR: f32 = 0.005;
-const MAX_SPEED: f32 = 400.;
-const MIN_SPEED: f32 = 150.;
-const MARGINS: f32 = 60.;
+pub const VISUAL_RANGE: f32 = 80.;
+pub const PROTECTED_RANGE: f32 = 40.;
+pub const MOUSE_ATTRACTION: f32 = 0.08;
+pub const TURN_FACTOR: f32 = 300.0;
+pub const SEPARATION_FACTOR: f32 = 0.8;
+pub const MATCHING_FACTOR: f32 = 0.5;
+pub const CENTERING_FACTOR: f32 = 0.005;
+pub const MAX_SPEED: f32 = 400.;
+pub const MIN_SPEED: f32 = 150.;
+pub const MARGINS: f32 = 60.;
 
-const BOID_COUNT: i32 = 50;
-const RARE_CHANCE: f32 = 80.0;
+pub const BOID_COUNT: i32 = 50;
+pub const RARE_CHANCE: f32 = 80.0;
 
-const ATLAS_RARE: &'static [&'static str] = &[
+pub const ATLAS_RARE: &'static [&'static str] = &[
     "boid_atlas_germany.png",
     "boid_atlas_ukraine.png",
     "boid_atlas_rainbow.png",
     "boid_atlas_kiel.png",
 ];
 
-const ATLAS_COMMON: &'static [&'static str] = &[
+pub const ATLAS_COMMON: &'static [&'static str] = &[
     "boid_atlas_tricolore.png",
     "boid_atlas_flower.png",
     "boid_atlas_plain.png",
     "boid_atlas_star.png",
 ];
 
-const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
-const SPRITE_SCALE: f32 = 1.0 / 6.0;
+pub const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
+pub const SPRITE_SCALE: f32 = 1.0 / 6.0;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
@@ -181,7 +182,7 @@ pub fn boid_movement(
         boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
         boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
 
-        collisioncheck(boid, &horizontal_walls);
+        collision::collisioncheck(boid, &horizontal_walls);
 
         let window = windows.get_primary().unwrap();
         if boid.x > window.width() - MARGINS {
@@ -219,22 +220,5 @@ pub fn boid_movement(
         let window = windows.get_primary().unwrap();
         transform.translation.x = boid.x - window.width() / 2.0;
         transform.translation.y = boid.y - window.height() / 2.0;
-    }
-}
-
-pub fn collisioncheck(boid: &mut Boid, horizontal_walls: &Query<(&HorizontalWall)>) {
-    for wall in horizontal_walls.iter() {
-        if boid.x > wall.startpoint.x && boid.x < (wall.startpoint.x + wall.size) {
-            info!("boid y: {:?}, wall.startpunkt: {:?}", boid.y, wall.startpoint);
-            if boid.y < (wall.startpoint.y + MARGINS) && boid.y > wall.startpoint.y {
-                boid.velocity_y += TURN_FACTOR;
-                info!("HILFE WIR SIND ");
-            }
-
-            if boid.y > (wall.startpoint.y - MARGINS) && boid.y < wall.startpoint.y {
-                boid.velocity_y -= TURN_FACTOR;
-                info!("ZWEITER HILFERUF");
-            }
-        }
     }
 }
