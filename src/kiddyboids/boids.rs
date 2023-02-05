@@ -119,7 +119,6 @@ pub fn boid_movement (
             boid.velocity_x *= MAX_SPEED / speed;
             boid.velocity_y *= MAX_SPEED / speed;
         } else if speed < MIN_SPEED {
-            info!("{:?}:{:?} -> {:?}:{:?}", boid.velocity_x, boid.velocity_y, speed, MIN_SPEED);
             boid.velocity_x *= MIN_SPEED / speed;
             boid.velocity_y *= MIN_SPEED / speed;
         }
