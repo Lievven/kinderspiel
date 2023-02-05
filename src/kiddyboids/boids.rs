@@ -1,14 +1,14 @@
-use bevy::{prelude::*};
-use std::{f32::consts::{TAU, PI}};
+use bevy::prelude::*;
 use rand::Rng;
+use std::f32::consts::{PI, TAU};
 
+use super::walls::HorizontalWall;
 use crate::kiddyboids::MousePosition;
-
 
 const VISUAL_RANGE: f32 = 80.;
 const PROTECTED_RANGE: f32 = 40.;
 const MOUSE_ATTRACTION: f32 = 0.08;
-const TURN_FACTOR: f32 = 30.0;
+const TURN_FACTOR: f32 = 300.0;
 const SEPARATION_FACTOR: f32 = 0.8;
 const MATCHING_FACTOR: f32 = 0.5;
 const CENTERING_FACTOR: f32 = 0.005;
@@ -23,14 +23,14 @@ const ATLAS_RARE: &'static [&'static str] = &[
     "boid_atlas_germany.png",
     "boid_atlas_ukraine.png",
     "boid_atlas_rainbow.png",
-    "boid_atlas_kiel.png"
+    "boid_atlas_kiel.png",
 ];
 
 const ATLAS_COMMON: &'static [&'static str] = &[
     "boid_atlas_tricolore.png",
     "boid_atlas_flower.png",
     "boid_atlas_plain.png",
-    "boid_atlas_star.png"
+    "boid_atlas_star.png",
 ];
 
 const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
@@ -41,7 +41,7 @@ pub struct AnimationTimer(Timer);
 
 // TODO: implement array of boids???
 #[derive(Resource, Deref, DerefMut)]
-pub struct BoidsList (pub Vec<Boid>);
+pub struct BoidsList(pub Vec<Boid>);
 
 #[derive(Component)]
 pub struct Boid {
@@ -52,10 +52,9 @@ pub struct Boid {
 }
 
 #[derive(Component, Deref)]
-pub struct BoidId (usize);
+pub struct BoidId(usize);
 
-
-pub fn boids_sprite_setup (
+pub fn boids_sprite_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
@@ -66,32 +65,32 @@ pub fn boids_sprite_setup (
 
     for i in 0..ATLAS_RARE.len() {
         let texture_handler: Handle<Image> = asset_server.load(ATLAS_RARE[i]);
-        let texture_atlas = TextureAtlas::from_grid(
-            texture_handler, SPRITE_SIZE, 2, 2, None, None
-        );
+        let texture_atlas = TextureAtlas::from_grid(texture_handler, SPRITE_SIZE, 2, 2, None, None);
         rare_handles.push(texture_atlases.add(texture_atlas));
     }
 
     for i in 0..ATLAS_COMMON.len() {
         let texture_handler: Handle<Image> = asset_server.load(ATLAS_COMMON[i]);
-        let texture_atlas = TextureAtlas::from_grid(
-            texture_handler, SPRITE_SIZE, 2, 2, None, None
-        );
+        let texture_atlas = TextureAtlas::from_grid(texture_handler, SPRITE_SIZE, 2, 2, None, None);
         common_handles.push(texture_atlases.add(texture_atlas));
-
     }
-    
+
     let mut rng = rand::thread_rng();
     for i in 0..BOID_COUNT {
         let radians = i as f32 * TAU / BOID_COUNT as f32;
-        let radius = 100.0 * rng.gen_range(0.1 .. 4.0);
+        let radius = 100.0 * rng.gen_range(0.1..4.0);
         let x = 400. + f32::sin(radians) * radius;
         let y = 300. - f32::cos(radians) * radius;
-        boids_list.push(Boid{x, y, velocity_x: 0., velocity_y: 0.});
+        boids_list.push(Boid {
+            x,
+            y,
+            velocity_x: 0.,
+            velocity_y: 0.,
+        });
     }
-    
+
     for i in 0..boids_list.len() {
-        let rare_flip: f32 = rng.gen_range(0.0 .. 100.0);
+        let rare_flip: f32 = rng.gen_range(0.0..100.0);
         let texture: Handle<TextureAtlas>;
         if rare_flip < RARE_CHANCE {
             let sprite_choice: usize = rng.gen_range(0..rare_handles.len());
@@ -103,17 +102,17 @@ pub fn boids_sprite_setup (
 
         commands.spawn((
             SpriteSheetBundle {
-                texture_atlas:texture,
+                texture_atlas: texture,
                 transform: Transform::from_scale(Vec3::splat(SPRITE_SCALE)),
                 ..default()
             },
             BoidId(i),
-            AnimationTimer(Timer::from_seconds(0.2, TimerMode::Repeating))
+            AnimationTimer(Timer::from_seconds(0.2, TimerMode::Repeating)),
         ));
     }
 }
 
-pub fn animate_sprite (
+pub fn animate_sprite(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(
@@ -131,19 +130,16 @@ pub fn animate_sprite (
     }
 }
 
-
-
-
-pub fn boid_movement (
+pub fn boid_movement(
     time: Res<Time>,
     mut boid_position: Query<(&mut BoidId, &mut Transform)>,
     mut boids_list: ResMut<BoidsList>,
     mouse_position: Res<MousePosition>,
     windows: ResMut<Windows>,
+    horizontal_walls: Query<&HorizontalWall>,
 ) {
     let size = boids_list.len();
     for i in 0..size {
-
         let mut neighbours = 0.0;
         let mut close_x = 0.0;
         let mut close_y = 0.0;
@@ -155,7 +151,7 @@ pub fn boid_movement (
         for j in 0..size {
             let boid = &boids_list[i];
             let other = &boids_list[j];
-            
+
             let mut dist_x = boid.x - other.x;
             dist_x *= dist_x;
             let mut dist_y = boid.y - other.y;
@@ -165,7 +161,7 @@ pub fn boid_movement (
             if distance < PROTECTED_RANGE * PROTECTED_RANGE {
                 close_x += boid.x - other.x;
                 close_y += boid.y - other.y;
-            } 
+            }
             if distance < VISUAL_RANGE {
                 neighbours += 1.;
                 align_x += other.velocity_x;
@@ -184,7 +180,9 @@ pub fn boid_movement (
         boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
         boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
         boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
-        
+
+        collisioncheck(boid, &horizontal_walls);
+
         let window = windows.get_primary().unwrap();
         if boid.x > window.width() - MARGINS {
             boid.velocity_x -= TURN_FACTOR;
@@ -208,7 +206,6 @@ pub fn boid_movement (
         }
     }
 
-
     // apply boid positions to sprites
     for (boid_id, mut transform) in &mut boid_position {
         let mut boid = &mut boids_list[boid_id.0];
@@ -218,76 +215,26 @@ pub fn boid_movement (
 
         let pointing: f32 = f32::atan2(-boid.velocity_x, boid.velocity_y);
         transform.rotation = Quat::from_rotation_z(pointing);
-     
+
         let window = windows.get_primary().unwrap();
         transform.translation.x = boid.x - window.width() / 2.0;
         transform.translation.y = boid.y - window.height() / 2.0;
-        
     }
 }
 
+pub fn collisioncheck(boid: &mut Boid, horizontal_walls: &Query<(&HorizontalWall)>) {
+    for wall in horizontal_walls.iter() {
+        if boid.x > wall.startpoint.x && boid.x < (wall.startpoint.x + wall.size) {
+            info!("boid y: {:?}, wall.startpunkt: {:?}", boid.y, wall.startpoint);
+            if boid.y < (wall.startpoint.y + MARGINS) && boid.y > wall.startpoint.y {
+                boid.velocity_y += TURN_FACTOR;
+                info!("HILFE WIR SIND ");
+            }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-pub fn boids_setup (
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut boids_list: ResMut<BoidsList>,
-) {
-    let mut rng = rand::thread_rng();
-    for i in 0..BOID_COUNT {
-        let radians = i as f32 * TAU / BOID_COUNT as f32;
-        let radius = 100.0 * rng.gen_range(0.1 .. 4.0);
-        let x = 400. + f32::sin(radians) * radius;
-        let y = 300. - f32::cos(radians) * radius;
-        boids_list.push(Boid{x, y, velocity_x: 0., velocity_y: 0.});
-    }
-
-    for i in 0..boids_list.len() {
-        commands.spawn((
-            MaterialMesh2dBundle {
-                mesh: meshes.add(shape::RegularPolygon::new(20., 3).into()).into(),
-                material: materials.add(ColorMaterial::from(Color::RED)),
-                ..default()
-            },
-            BoidId(i),
-        ));
-    }
-}
-
-
-
-
-
-fn compute_boid_behavior (
-    mouse_position: Res<MousePosition>,
-    mut boid: Boid,
-    mut transform: Transform,
-    boids: Query<(&mut Boid, &mut Transform)>,
-) {
-    for (other, other_transform) in &boids {
-        let distance_x = transform.translation.x - other_transform.translation.x;
-        let distance_y = transform.translation.y - other_transform.translation.y;
-        let distance = distance_x * distance_x + distance_y * distance_y;
-        if distance <= VISUAL_RANGE * VISUAL_RANGE {
-            info!("{:?}:{:?}", other.velocity_x, other.velocity_y);
+            if boid.y > (wall.startpoint.y - MARGINS) && boid.y < wall.startpoint.y {
+                boid.velocity_y -= TURN_FACTOR;
+                info!("ZWEITER HILFERUF");
+            }
         }
     }
 }
-
-*/
