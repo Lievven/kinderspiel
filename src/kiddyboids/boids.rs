@@ -1,10 +1,13 @@
-use bevy::{prelude::*};
+use bevy::prelude::*;
 use rand::Rng;
 use std::f32::consts::TAU;
 mod collision;
 mod goalcollision;
 
-use super::{goal_setup::Goal, walls::{HorizontalWall, VerticalWall}};
+use super::{
+    goal_setup::Goal,
+    walls::{HorizontalWall, VerticalWall},
+};
 use crate::kiddyboids::MousePosition;
 
 pub const VISUAL_RANGE: f32 = 80.;
@@ -151,8 +154,8 @@ pub fn boid_movement(
     vertical_walls: Query<&VerticalWall>,
     goals: Query<&Goal>,
 ) {
-
     let size = boids_list.len();
+    let mut remaining_active = size;
     for i in 0..size {
         let mut neighbours = 0.0;
         let mut close_x = 0.0;
@@ -165,8 +168,6 @@ pub fn boid_movement(
 
         for j in 0..size {
             let boid = &boids_list[i];
-
-
 
             this_boid_is_active = boid.is_active;
             if boid.is_active {
@@ -202,18 +203,28 @@ pub fn boid_movement(
             boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
             boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
             boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
-    let goal = goals.iter().next();
-    if let Some(goal) = goal {
-        if goal.position.distance(Vec2::new(boid.x, boid.y)) < (goal.radius * 2.){
-        boid.velocity_x += (goal.position.x - boid.x) * GOAL_ATTRACTION;
-        boid.velocity_y += (goal.position.y - boid.y) * GOAL_ATTRACTION;
-        }
-    }
+            let goal = goals.iter().next();
+            if let Some(goal) = goal {
+                if goal.position.distance(Vec2::new(boid.x, boid.y)) < (goal.radius * 2.) {
+                    boid.velocity_x += (goal.position.x - boid.x) * GOAL_ATTRACTION;
+                    boid.velocity_y += (goal.position.y - boid.y) * GOAL_ATTRACTION;
+                }
+            }
 
             let window = windows.get_primary().unwrap();
 
-            collision::horizontal_collision_check(boid, &horizontal_walls, window.height(), window.width());
-            collision::vertical_collision_check(boid, &vertical_walls, window.height(), window.width());
+            collision::horizontal_collision_check(
+                boid,
+                &horizontal_walls,
+                window.height(),
+                window.width(),
+            );
+            collision::vertical_collision_check(
+                boid,
+                &vertical_walls,
+                window.height(),
+                window.width(),
+            );
             goalcollision::goal_collisioncheck(boid, &goals);
 
             if boid.x > window.width() - MARGINS {
@@ -236,12 +247,23 @@ pub fn boid_movement(
                 boid.velocity_x *= MIN_SPEED / speed;
                 boid.velocity_y *= MIN_SPEED / speed;
             }
+        } else {
+                remaining_active -= 1;
+
         }
+    }
+    if remaining_active == 0 {
+        reset(&mut boids_list);
     }
 
     // apply boid positions to sprites
     for (boid_id, mut transform, mut is_active) in &mut boid_position {
         let mut boid = &mut boids_list[boid_id.0];
+
+        if !is_active.0 && boid.is_active {
+            transform.translation.z = 1.;
+        }
+
         is_active.0 = boid.is_active;
         if is_active.0 {
             boid.x += boid.velocity_x * time.delta_seconds();
@@ -253,9 +275,16 @@ pub fn boid_movement(
             let window = windows.get_primary().unwrap();
             transform.translation.x = boid.x - window.width() / 2.0;
             transform.translation.y = boid.y - window.height() / 2.0;
-        }
-        else{
+        } else {
             transform.translation.z = -10.;
         }
+    }
+}
+
+fn reset(boids_list: &mut ResMut<BoidsList>){
+    for boid in boids_list.iter_mut(){
+        boid.is_active = true;
+        boid.x = 0.;
+        boid.y = 0.;
     }
 }
