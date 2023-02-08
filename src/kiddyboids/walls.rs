@@ -90,6 +90,7 @@ fn create_horizontal_wall(
     ));
 }
 
+
 fn create_vertical_wall(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,

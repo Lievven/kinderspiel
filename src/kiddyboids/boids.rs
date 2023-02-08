@@ -13,16 +13,16 @@ use crate::kiddyboids::MousePosition;
 pub const VISUAL_RANGE: f32 = 80.;
 pub const PROTECTED_RANGE: f32 = 40.;
 pub const MOUSE_ATTRACTION: f32 = 0.08;
-pub const TURN_FACTOR: f32 = 80.0;
 pub const GOAL_ATTRACTION: f32 = 0.9;
 pub const SEPARATION_FACTOR: f32 = 0.8;
 pub const MATCHING_FACTOR: f32 = 0.5;
 pub const CENTERING_FACTOR: f32 = 0.005;
 pub const MAX_SPEED: f32 = 400.;
 pub const MIN_SPEED: f32 = 150.;
-pub const MARGINS: f32 = 60.;
+pub const MARGINS: f32 = 50.;
+pub const TURN_FACTOR: f32 = 40.0;
 
-pub const BOID_COUNT: i32 = 20;
+pub const BOID_COUNT: i32 = 5;
 pub const RARE_CHANCE: f32 = 10.0;
 
 pub const ATLAS_RARE: &'static [&'static str] = &[
@@ -52,10 +52,10 @@ pub const SPRITE_SCALE: f32 = 1.0 / 6.0;
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 
-#[derive(Resource, Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut, Debug)]
 pub struct BoidsList(pub Vec<Boid>);
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Boid {
     pub x: f32,
     pub y: f32,
@@ -130,6 +130,7 @@ pub fn boids_sprite_setup(
     }
 }
 
+
 pub fn animate_sprite(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
@@ -151,6 +152,7 @@ pub fn animate_sprite(
     }
 }
 
+
 pub fn boid_movement(
     time: Res<Time>,
     mut boid_position: Query<(&mut BoidId, &mut Transform, &mut IsActive)>,
@@ -161,9 +163,17 @@ pub fn boid_movement(
     vertical_walls: Query<&VerticalWall>,
     goals: Query<&Goal>,
 ) {
+    let window = windows.get_primary().unwrap();
     let size = boids_list.len();
     let mut remaining_active = size;
     for i in 0..size {
+
+        // skip boid if inactive
+        if !boids_list[i].is_active {
+            remaining_active -= 1;
+            continue;
+        }
+
         let mut neighbours = 0.0;
         let mut close_x = 0.0;
         let mut close_y = 0.0;
@@ -171,100 +181,106 @@ pub fn boid_movement(
         let mut align_y = 0.0;
         let mut cohesion_x = 0.0;
         let mut cohesion_y = 0.0;
-        let mut this_boid_is_active = true;
 
         for j in 0..size {
-            let boid = &boids_list[i];
 
-            this_boid_is_active = boid.is_active;
-            if boid.is_active {
-                let other = &boids_list[j];
-                if other.is_active {
-                    let mut dist_x = boid.x - other.x;
-                    dist_x *= dist_x;
-                    let mut dist_y = boid.y - other.y;
-                    dist_y *= dist_y;
-                    let distance = dist_x + dist_y;
-                    // using squared distance cuz roots suck
-                    if distance < PROTECTED_RANGE * PROTECTED_RANGE {
-                        close_x += boid.x - other.x;
-                        close_y += boid.y - other.y;
-                    }
-                    if distance < VISUAL_RANGE {
-                        neighbours += 1.;
-                        align_x += other.velocity_x;
-                        align_y += other.velocity_y;
-                        cohesion_x += other.x;
-                        cohesion_y += other.y;
-                    }
-                }
+            // we do not want boids to collide with themselves now, do we?
+            if i == j {
+               continue;
+            }
+
+            let boid = &boids_list[i];
+            let other = &boids_list[j];
+
+            // skip collision with other boid if it is inactive
+            if !other.is_active {
+                continue;
+            }
+
+            let mut dist_x = boid.x - other.x;
+            dist_x *= dist_x;
+            let mut dist_y = boid.y - other.y;
+            dist_y *= dist_y;
+            let distance = dist_x + dist_y;
+            // using squared distance cuz roots suck
+            if distance < PROTECTED_RANGE * PROTECTED_RANGE {
+                close_x += (boid.x - other.x) * PROTECTED_RANGE / f32::sqrt(distance);
+                close_y += boid.y - other.y * PROTECTED_RANGE / f32::sqrt(distance);
+            }
+            if distance < VISUAL_RANGE {
+                neighbours += 1.;
+                align_x += other.velocity_x;
+                align_y += other.velocity_y;
+                cohesion_x += other.x;
+                cohesion_y += other.y;
             }
         }
-        if this_boid_is_active {
-            let boid = &mut boids_list[i];
-            boid.velocity_x += close_x * SEPARATION_FACTOR;
-            boid.velocity_y += close_y * SEPARATION_FACTOR;
+
+        let boid = &mut boids_list[i];
+
+        boid.velocity_x += close_x * SEPARATION_FACTOR;
+        boid.velocity_y += close_y * SEPARATION_FACTOR;
+        if neighbours > 0.0 {
             boid.velocity_x += (align_x / neighbours - boid.velocity_x) * MATCHING_FACTOR;
             boid.velocity_y += (align_y / neighbours - boid.velocity_y) * MATCHING_FACTOR;
             boid.velocity_x += (cohesion_x / neighbours - boid.x) * CENTERING_FACTOR;
             boid.velocity_y += (cohesion_y / neighbours - boid.y) * CENTERING_FACTOR;
-            boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
-            boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
-            let goal = goals.iter().next();
-            if let Some(goal) = goal {
-                if goal.position.distance(Vec2::new(boid.x, boid.y)) < (goal.radius * 2.) {
-                    boid.velocity_x += (goal.position.x - boid.x) * GOAL_ATTRACTION;
-                    boid.velocity_y += (goal.position.y - boid.y) * GOAL_ATTRACTION;
-                }
-            }
-
-            let window = windows.get_primary().unwrap();
-
-            collision::horizontal_collision_check(
-                boid,
-                &horizontal_walls,
-                window.height(),
-                window.width(),
-            );
-            collision::vertical_collision_check(
-                boid,
-                &vertical_walls,
-                window.height(),
-                window.width(),
-            );
-            goalcollision::goal_collisioncheck(boid, &goals);
-
-            if boid.x > window.width() - MARGINS {
-                boid.velocity_x -= TURN_FACTOR;
-            } else if boid.x < MARGINS {
-                boid.velocity_x += TURN_FACTOR;
-            }
-            if boid.y > window.height() - MARGINS {
-                boid.velocity_y -= TURN_FACTOR;
-            } else if boid.y < MARGINS {
-                boid.velocity_y += TURN_FACTOR;
-            }
-
-            let mut speed = boid.velocity_x * boid.velocity_x + boid.velocity_y * boid.velocity_y;
-            speed = f32::sqrt(speed);
-            if speed > MAX_SPEED {
-                boid.velocity_x *= MAX_SPEED / speed;
-                boid.velocity_y *= MAX_SPEED / speed;
-            } else if speed < MIN_SPEED {
-                boid.velocity_x *= MIN_SPEED / speed;
-                boid.velocity_y *= MIN_SPEED / speed;
-            }
-        } else {
-                remaining_active -= 1;
-
         }
+        boid.velocity_x += (mouse_position.x - boid.x) * MOUSE_ATTRACTION;
+        boid.velocity_y += (mouse_position.y - boid.y) * MOUSE_ATTRACTION;
+
+        let goal = goals.iter().next();
+        if let Some(goal) = goal {
+            if goal.position.distance(Vec2::new(boid.x, boid.y)) < (goal.radius * 2.) {
+                boid.velocity_x += (goal.position.x - boid.x) * GOAL_ATTRACTION;
+                boid.velocity_y += (goal.position.y - boid.y) * GOAL_ATTRACTION;
+            }
+        }
+
+        collision::horizontal_collision_check(
+            boid,
+            &horizontal_walls,
+            window.height(),
+            window.width(),
+        );
+        collision::vertical_collision_check(
+            boid,
+            &vertical_walls,
+            window.height(),
+            window.width(),
+        );
+        goalcollision::goal_collisioncheck(boid, &goals);
+
+        collision::window_collision_check(boid, &window);
+
+        let mut speed = boid.velocity_x * boid.velocity_x + boid.velocity_y * boid.velocity_y;
+        speed = f32::sqrt(speed);
+        if speed > MAX_SPEED {
+            boid.velocity_x *= MAX_SPEED / speed;
+            boid.velocity_y *= MAX_SPEED / speed;
+        } else if speed < MIN_SPEED {
+            boid.velocity_x *= MIN_SPEED / speed;
+            boid.velocity_y *= MIN_SPEED / speed;
+        }
+       
     }
+
     if remaining_active == 0 {
         reset(&mut boids_list);
     }
 
-    // apply boid positions to sprites
-    for (boid_id, mut transform, mut is_active) in &mut boid_position {
+    apply_boid_position(&mut boid_position, &mut boids_list, time, window);
+
+}
+
+
+fn apply_boid_position (
+    boid_position: &mut Query<(&mut BoidId, &mut Transform, &mut IsActive)>,
+    boids_list: &mut ResMut<BoidsList>,
+    time: Res<Time>,
+    window: &Window,
+) {
+    for (boid_id, mut transform, mut is_active) in boid_position {
         let mut boid = &mut boids_list[boid_id.0];
 
         if !is_active.0 && boid.is_active {
@@ -279,7 +295,6 @@ pub fn boid_movement(
             let pointing: f32 = f32::atan2(-boid.velocity_x, boid.velocity_y);
             transform.rotation = Quat::from_rotation_z(pointing);
 
-            let window = windows.get_primary().unwrap();
             transform.translation.x = boid.x - window.width() / 2.0;
             transform.translation.y = boid.y - window.height() / 2.0;
         } else {
@@ -287,6 +302,7 @@ pub fn boid_movement(
         }
     }
 }
+
 
 fn reset(boids_list: &mut ResMut<BoidsList>){
     for boid in boids_list.iter_mut(){

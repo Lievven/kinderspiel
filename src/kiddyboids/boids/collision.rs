@@ -1,4 +1,4 @@
-use bevy::prelude::{Query};
+use bevy::{prelude::{Query}, window::Window};
 
 use crate::kiddyboids::{walls::{HorizontalWall, VerticalWall}, boids};
 
@@ -12,11 +12,13 @@ pub fn vertical_collision_check(boid: &mut Boid, vertical_walls: &Query<&Vertica
     for wall in vertical_walls.iter() {
         if y > wall.startpoint.y && y < (wall.startpoint.y + wall.size) {
             if x < (wall.startpoint.x + boids::MARGINS) && x > wall.startpoint.x {
-                boid.velocity_x += boids::TURN_FACTOR;
+                let turn = boids::MARGINS / (x - wall.startpoint.x) - 1.0;
+                boid.velocity_x += boids::TURN_FACTOR * turn;
             }
 
             if x > (wall.startpoint.x - boids::MARGINS) && x < wall.startpoint.x {
-                boid.velocity_x -= boids::TURN_FACTOR;
+                let turn = boids::MARGINS / (wall.startpoint.x - x) - 1.0;
+                boid.velocity_x -= boids::TURN_FACTOR * turn;
             }
         }
     }
@@ -31,12 +33,27 @@ pub fn horizontal_collision_check(boid: &mut Boid, horizontal_walls: &Query<&Hor
     for wall in horizontal_walls.iter() {
         if x > wall.startpoint.x && x < (wall.startpoint.x + wall.size) {
             if y < (wall.startpoint.y + boids::MARGINS) && y > wall.startpoint.y {
-                boid.velocity_y += boids::TURN_FACTOR;
+                let turn = boids::MARGINS / (y - wall.startpoint.y) - 1.0;
+                boid.velocity_y += boids::TURN_FACTOR * turn;
             }
 
             if y > (wall.startpoint.y - boids::MARGINS) && y < wall.startpoint.y {
-                boid.velocity_y -= boids::TURN_FACTOR;
+                let turn = boids::MARGINS / (wall.startpoint.y - y) - 1.0;
+                boid.velocity_y -= boids::TURN_FACTOR * turn;
             }
         }
+    }
+}
+
+pub fn window_collision_check(boid: &mut Boid, window: &Window) {
+    if boid.x > window.width() - boids::MARGINS {
+        boid.velocity_x -= boids::TURN_FACTOR;
+    } else if boid.x < boids::MARGINS {
+        boid.velocity_x += boids::TURN_FACTOR;
+    }
+    if boid.y > window.height() - boids::MARGINS {
+        boid.velocity_y -= boids::TURN_FACTOR;
+    } else if boid.y < boids::MARGINS {
+        boid.velocity_y += boids::TURN_FACTOR;
     }
 }
