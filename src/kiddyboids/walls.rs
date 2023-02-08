@@ -42,24 +42,7 @@ pub fn setup_walls(
         material: materials.add(ColorMaterial::from(Color::RED)),
         transform: Transform::from_translation(Vec3::new(0., 0., 10.)),
         ..default()
-    }); */   
-
-    // for x in 0..30 {
-    //     let x = 50. * x as f32;
-    //     for y in 0..15 {
-    //         let y = 50. * y as f32;
-    //         {
-    //         create_horizontal_wall(
-    //             &mut commands,
-    //             &mut meshes,
-    //             &mut materials,
-    //             Vec2::new(x, y),
-    //             Vec2::new(x + 20., y + 20.),
-    //         );
-    //     }
-    //         info!("{:?}, {:?}", x, y);
-    //     }
-    // }
+    }); */
 
     generate_walls(
         0,
@@ -71,25 +54,6 @@ pub fn setup_walls(
         window.width(),
     );
 
-    /* 
-    let startpoint = Vec2::new(-500., -100.);
-    let endpoint = Vec2::new(0., -100.);
-
-    create_horizontal_wall(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        startpoint,
-        endpoint,
-    ); 
-
-    create_vertical_wall(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        startpoint,
-        endpoint,
-    );*/
 }
 
 

@@ -1,10 +1,7 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{prelude::*};
 
 mod boids;
 use boids::*;
-
-mod sprites;
-use sprites::*;
 
 mod walls;
 use walls::*;
@@ -21,10 +18,6 @@ pub struct MousePosition {
     y: f32,
 }
 
-#[derive(Component)]
-pub enum Direction {
-    Mouse,
-}
 
 pub fn run(mut app: App) {
     app.insert_resource(MousePosition { x: 0., y: 0. })
@@ -44,7 +37,6 @@ pub fn run(mut app: App) {
         .add_startup_system(setup)
         .add_startup_system(boids_sprite_setup)
         .add_system(animate_sprite)
-        .add_system(sprite_movement)
         .add_system(mouse_click_system)
         .add_system(boid_movement)
         .run();
@@ -61,19 +53,7 @@ pub fn mouse_click_system(
 }
 
 pub fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: Commands
 ) {
     commands.spawn(Camera2dBundle::default());
-
-   /* commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
-            transform: Transform::default().with_scale(Vec3::splat(128.)),
-            material: materials.add(ColorMaterial::from(Color::PURPLE)),
-            ..default()
-        },
-        Direction::Mouse,
-    )); */
 }
