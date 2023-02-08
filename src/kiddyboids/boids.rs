@@ -13,17 +13,17 @@ use crate::kiddyboids::MousePosition;
 pub const VISUAL_RANGE: f32 = 80.;
 pub const PROTECTED_RANGE: f32 = 40.;
 pub const MOUSE_ATTRACTION: f32 = 0.08;
+pub const TURN_FACTOR: f32 = 80.0;
 pub const GOAL_ATTRACTION: f32 = 0.9;
-pub const TURN_FACTOR: f32 = 3000.0;
 pub const SEPARATION_FACTOR: f32 = 0.8;
 pub const MATCHING_FACTOR: f32 = 0.5;
 pub const CENTERING_FACTOR: f32 = 0.005;
 pub const MAX_SPEED: f32 = 400.;
 pub const MIN_SPEED: f32 = 150.;
-pub const MARGINS: f32 = 20.;
+pub const MARGINS: f32 = 60.;
 
-pub const BOID_COUNT: i32 = 10;
-pub const RARE_CHANCE: f32 = 80.0;
+pub const BOID_COUNT: i32 = 20;
+pub const RARE_CHANCE: f32 = 10.0;
 
 pub const ATLAS_RARE: &'static [&'static str] = &[
     "boid_atlas_germany.png",
@@ -34,9 +34,16 @@ pub const ATLAS_RARE: &'static [&'static str] = &[
 
 pub const ATLAS_COMMON: &'static [&'static str] = &[
     "boid_atlas_tricolore.png",
+    "boid_atlas_tricolore_2.png",
     "boid_atlas_flower.png",
+    "boid_atlas_flower_2.png",
     "boid_atlas_plain.png",
+    "boid_atlas_plain_2.png",
+    "boid_atlas_plain_3.png",
     "boid_atlas_star.png",
+    "boid_atlas_star_2.png",
+    "boid_atlas_star_3.png",
+    "boid_atlas_star_4.png",
 ];
 
 pub const SPRITE_SIZE: Vec2 = Vec2::new(256.0, 256.0);
